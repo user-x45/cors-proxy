@@ -41,7 +41,30 @@ export default {
       newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       newHeaders.set('Access-Control-Allow-Headers', '*');
 
-      return new Response(response.body, {
+      let itemCount = 0;
+      let entryCount = 0;
+
+      const rewriter = new HTMLRewriter()
+        .on('item', {
+          element(element) {
+            itemCount++;
+            if (itemCount > 20) {
+              element.remove();
+            }
+          }
+        })
+        .on('entry', {
+          element(element) {
+            entryCount++;
+            if (entryCount > 20) {
+              element.remove();
+            }
+          }
+        });
+
+      const transformedResponse = rewriter.transform(response);
+
+      return new Response(transformedResponse.body, {
         status: response.status,
         statusText: response.statusText,
         headers: newHeaders,
