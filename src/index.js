@@ -43,6 +43,8 @@ export default {
 
       let itemCount = 0;
       let entryCount = 0;
+      let currentTitle = '';
+      let currentItemElement = null;
 
       const rewriter = new HTMLRewriter()
         .on('item', {
@@ -50,6 +52,23 @@ export default {
             itemCount++;
             if (itemCount > 20) {
               element.remove();
+            } else {
+              currentItemElement = element;
+            }
+          }
+        })
+        .on('item > title', {
+          text(text) {
+            currentTitle += text.text;
+            if (text.lastInTextNode) {
+              const match = currentTitle.match(/(.*?)\s*[（(]([^）)]+)[）)]\s*$/);
+              if (match && currentItemElement) {
+                const cleanedTitle = match[1];
+                const sourceName = match[2];
+                text.replace(cleanedTitle);
+                currentItemElement.append(`<source>${sourceName}</source>`, { html: true });
+              }
+              currentTitle = '';
             }
           }
         })
@@ -58,6 +77,23 @@ export default {
             entryCount++;
             if (entryCount > 20) {
               element.remove();
+            } else {
+              currentItemElement = element;
+            }
+          }
+        })
+        .on('entry > title', {
+          text(text) {
+            currentTitle += text.text;
+            if (text.lastInTextNode) {
+              const match = currentTitle.match(/(.*?)\s*[（(]([^）)]+)[）)]\s*$/);
+              if (match && currentItemElement) {
+                const cleanedTitle = match[1];
+                const sourceName = match[2];
+                text.replace(cleanedTitle);
+                currentItemElement.append(`<source>${sourceName}</source>`, { html: true });
+              }
+              currentTitle = '';
             }
           }
         });
