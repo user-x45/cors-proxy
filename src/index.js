@@ -43,9 +43,6 @@ export default {
 
       let itemCount = 0;
       let entryCount = 0;
-      let currentTitle = '';
-      let currentItemElement = null;
-      let currentTitleElement = null;
 
       const rewriter = new HTMLRewriter()
         .on('item', {
@@ -53,26 +50,6 @@ export default {
             itemCount++;
             if (itemCount > 20) {
               element.remove();
-            } else {
-              currentItemElement = element;
-            }
-          }
-        })
-        .on('item > title', {
-          element(element) {
-            currentTitleElement = element;
-            currentTitle = '';
-          },
-          text(text) {
-            currentTitle += text.text;
-            if (text.lastInTextNode) {
-              const match = currentTitle.match(/(.*?)\s*[（(]([^）)]+)[）)]\s*$/);
-              if (match && currentItemElement && currentTitleElement) {
-                const cleanedTitle = match[1];
-                const sourceName = match[2];
-                currentTitleElement.setInnerContent(cleanedTitle);
-                currentItemElement.append(`<source>${sourceName}</source>`, { html: true });
-              }
             }
           }
         })
@@ -81,26 +58,6 @@ export default {
             entryCount++;
             if (entryCount > 20) {
               element.remove();
-            } else {
-              currentItemElement = element;
-            }
-          }
-        })
-        .on('entry > title', {
-          element(element) {
-            currentTitleElement = element;
-            currentTitle = '';
-          },
-          text(text) {
-            currentTitle += text.text;
-            if (text.lastInTextNode) {
-              const match = currentTitle.match(/(.*?)\s*[（(]([^）)]+)[）)]\s*$/);
-              if (match && currentItemElement && currentTitleElement) {
-                const cleanedTitle = match[1];
-                const sourceName = match[2];
-                currentTitleElement.setInnerContent(cleanedTitle);
-                currentItemElement.append(`<source>${sourceName}</source>`, { html: true });
-              }
             }
           }
         });
