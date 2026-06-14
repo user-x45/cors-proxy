@@ -1,12 +1,27 @@
 export default {
   async fetch(request, env, ctx) {
+    const allowedOrigin = 'https://portalite.f5.si/';
+    const origin = request.headers.get('Origin');
+    const referer = request.headers.get('Referer');
+
+    const isAllowed = 
+      (origin && origin.startsWith(allowedOrigin)) || 
+      (referer && referer.startsWith(allowedOrigin));
+
+    if (!isAllowed) {
+      return new Response('エラー: アクセスが許可されていません。', {
+        status: 403,
+        headers: { 'Access-Control-Allow-Origin': allowedOrigin }
+      });
+    }
+
     const url = new URL(request.url);
     const targetUrl = url.searchParams.get('url');
 
     if (!targetUrl) {
       return new Response('エラー: "url" パラメータが必要です。', {
         status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Access-Control-Allow-Origin': allowedOrigin }
       });
     }
 
@@ -14,7 +29,7 @@ export default {
       return new Response(null, {
         status: 204,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': allowedOrigin,
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': '*',
           'Access-Control-Max-Age': '86400',
@@ -37,7 +52,7 @@ export default {
       const response = await fetch(modifiedRequest);
 
       const newHeaders = new Headers(response.headers);
-      newHeaders.set('Access-Control-Allow-Origin', '*');
+      newHeaders.set('Access-Control-Allow-Origin', allowedOrigin);
       newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       newHeaders.set('Access-Control-Allow-Headers', '*');
 
@@ -73,7 +88,7 @@ export default {
     } catch (error) {
       return new Response(`プロキシ通信エラー: ${error.message}`, {
         status: 500,
-        headers: { 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Access-Control-Allow-Origin': allowedOrigin }
       });
     }
   },
