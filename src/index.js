@@ -35,36 +35,46 @@ export default {
       });
 
       const response = await fetch(modifiedRequest);
+      const xmlText = await response.text();
 
       const newHeaders = new Headers(response.headers);
       newHeaders.set('Access-Control-Allow-Origin', '*');
       newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       newHeaders.set('Access-Control-Allow-Headers', '*');
 
-      let itemCount = 0;
-      let entryCount = 0;
+      const isAtom = xmlText.includes('<feed') || xmlText.includes('<entry');
+      const itemRegex = isAtom ? /<entry[\s\S]*?<\/entry>/g : /<item[\s\S]*?<\/item>/g;
+      const dateRegex = isAtom ? /<(?:updated|published)[^>]*>([\s\S]*?)<\/(?:updated|published)>/ : /<(?:pubDate|dc:date)[^>]*>([\s\S]*?)<\/(?:pubDate|dc:date)>/;
 
-      const rewriter = new HTMLRewriter()
-        .on('item', {
-          element(element) {
-            itemCount++;
-            if (itemCount > 20) {
-              element.remove();
-            }
-          }
-        })
-        .on('entry', {
-          element(element) {
-            entryCount++;
-            if (entryCount > 20) {
-              element.remove();
-            }
-          }
-        });
+      const items = xmlText.match(itemRegex) || [];
+      
+      const parsedItems = items.map(item => {
+        const dateMatch = item.match(dateRegex);
+        const dateStr = dateMatch ? dateMatch[1].trim() : '';
+        const timestamp = dateStr ? new Date(dateStr).getTime() : 0;
+        return { item, timestamp };
+      });
 
-      const transformedResponse = rewriter.transform(response);
+      parsedItems.sort((a, b) => b.timestamp - a.timestamp);
 
-      return new Response(transformedResponse.body, {
+      const top20Items = parsedItems.slice(0, 20).map(x => x.item).join('\n');
+
+      let finalXml = '';
+      const firstItemIndex = xmlText.search(itemRegex);
+
+      if (firstItemIndex !== -1) {
+        const header = xmlText.substring(0, firstItemIndex);
+        
+        const lastItemMatch = [...xmlText.matchAll(itemRegex)].pop();
+        const lastItemEndIndex = lastItemMatch.index + lastItemMatch[0].length;
+        const footer = xmlText.substring(lastItemEndIndex);
+
+        finalXml = header + top20Items + footer;
+      } else {
+        finalXml = xmlText;
+      }
+
+      return new Response(finalXml, {
         status: response.status,
         statusText: response.statusText,
         headers: newHeaders,
