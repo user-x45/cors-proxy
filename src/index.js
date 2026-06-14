@@ -45,6 +45,7 @@ export default {
       let entryCount = 0;
       let currentTitle = '';
       let currentItemElement = null;
+      let currentTitleElement = null;
 
       const rewriter = new HTMLRewriter()
         .on('item', {
@@ -58,17 +59,20 @@ export default {
           }
         })
         .on('item > title', {
+          element(element) {
+            currentTitleElement = element;
+            currentTitle = '';
+          },
           text(text) {
             currentTitle += text.text;
             if (text.lastInTextNode) {
               const match = currentTitle.match(/(.*?)\s*[（(]([^）)]+)[）)]\s*$/);
-              if (match && currentItemElement) {
+              if (match && currentItemElement && currentTitleElement) {
                 const cleanedTitle = match[1];
                 const sourceName = match[2];
-                text.replace(cleanedTitle);
+                currentTitleElement.setInnerContent(cleanedTitle);
                 currentItemElement.append(`<source>${sourceName}</source>`, { html: true });
               }
-              currentTitle = '';
             }
           }
         })
@@ -83,17 +87,20 @@ export default {
           }
         })
         .on('entry > title', {
+          element(element) {
+            currentTitleElement = element;
+            currentTitle = '';
+          },
           text(text) {
             currentTitle += text.text;
             if (text.lastInTextNode) {
               const match = currentTitle.match(/(.*?)\s*[（(]([^）)]+)[）)]\s*$/);
-              if (match && currentItemElement) {
+              if (match && currentItemElement && currentTitleElement) {
                 const cleanedTitle = match[1];
                 const sourceName = match[2];
-                text.replace(cleanedTitle);
+                currentTitleElement.setInnerContent(cleanedTitle);
                 currentItemElement.append(`<source>${sourceName}</source>`, { html: true });
               }
-              currentTitle = '';
             }
           }
         });
